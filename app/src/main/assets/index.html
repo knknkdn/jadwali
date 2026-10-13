@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>جدولي</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef2f6;--card:#fff;--ink:#14202b;--mut:#64748b;--ln:#d5dde6;--a:#0f766e;--bad:#b91c1c;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#10171f;--card:#1a242f;--ink:#e8eef4;--mut:#94a3b8;--ln:#2c3a48}}
+:root[data-theme=dark]{--bg:#10171f;--card:#1a242f;--ink:#e8eef4;--mut:#94a3b8;--ln:#2c3a48}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Cairo,Tahoma,sans-serif;padding-bottom:70px}
+header{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--a);color:#fff;position:sticky;top:0;z-index:5}
+header h1{font-size:19px;margin:0;flex:1;font-weight:800}
+button,select,input{font:inherit;color:inherit}
+.ib{background:none;border:0;color:#fff;font-size:24px;cursor:pointer}
+.btn{background:var(--a);color:#fff;border:0;border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:600}
+.btn.g{background:transparent;color:var(--a);border:1.5px solid var(--a)}.btn.d{background:var(--bad)}
+.wrap{padding:12px;max-width:900px;margin:auto}
+.tw{overflow-x:auto;border-radius:12px;border:1px solid var(--ln);background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:640px}
+th,td{border:1px solid var(--ln);padding:4px;text-align:center;font-size:12px;height:58px;min-width:84px}
+th{background:var(--bg);height:38px;font-weight:600}
+td.t{background:var(--bg);font-weight:600;min-width:74px;color:var(--mut)}
+.c{background:var(--a);color:#fff;border-radius:8px;padding:5px 3px;cursor:pointer;font-weight:600;line-height:1.3;height:100%}
+.c small{display:block;font-weight:400;opacity:.9}
+nav{position:fixed;bottom:0;inset-inline:0;display:flex;background:var(--card);border-top:1px solid var(--ln);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;background:none;border:0;padding:12px;font-weight:600;color:var(--mut);cursor:pointer}
+nav button.on{color:var(--a);box-shadow:inset 0 -3px var(--a)}
+.row{display:flex;gap:8px;align-items:center;margin:8px 0;flex-wrap:wrap}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:12px;margin:10px 0}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+input,select{width:100%;padding:10px;border:1px solid var(--ln);border-radius:10px;background:var(--bg)}
+input[type=checkbox]{width:auto}
+#m{position:fixed;inset:0;background:#0007;display:none;z-index:20;align-items:flex-end;justify-content:center}
+#m.on{display:flex}
+#mb{background:var(--card);width:100%;max-width:560px;max-height:90%;overflow:auto;border-radius:18px 18px 0 0;padding:16px}
+#mb h2{margin:0 0 6px;font-size:18px}
+.sw{width:34px;height:34px;border-radius:50%;border:3px solid transparent;cursor:pointer}.sw.on{border-color:var(--ink)}
+#toast{position:fixed;top:70px;inset-inline:12px;background:var(--ink);color:var(--bg);padding:12px;border-radius:12px;z-index:30;display:none;font-weight:600}
+#toast.bad{background:var(--bad);color:#fff}
+.mut{color:var(--mut);font-size:13px}.lec{border-top:1px dashed var(--ln);padding-top:6px;margin-top:8px}
+.ex{display:flex;justify-content:space-between;gap:8px;align-items:center}
+</style>
+</head>
+<body>
+<header><button class="ib" onclick="menu()" aria-label="menu">☰</button><h1 id="ttl"></h1></header>
+<div class="wrap" id="v"></div>
+<nav id="nv"></nav>
+<div id="m" onclick="if(event.target==this)cl()"><div id="mb"></div></div>
+<div id="toast"></div>
+<script>
+const DN=[["السبت","Sat"],["الأحد","Sun"],["الاثنين","Mon"],["الثلاثاء","Tue"],["الأربعاء","Wed"],["الخميس","Thu"],["الجمعة","Fri"]];
+const COL=["#0f766e","#1d4ed8","#7c3aed","#be185d","#c2410c","#334155"];
+const DEF={lang:"ar",color:COL[0],theme:"auto",days:[0,1,2,3,4,5],slots:[["08:30","10:00"],["10:00","11:30"],["11:30","13:00"],["13:00","14:30"],["14:30","16:00"],["16:00","17:30"],["17:30","19:00"]],courses:[],exams:[],notif:{on:false,min:30}};
+let S=JSON.parse(JSON.stringify(DEF)),view="tt";
+try{const x=localStorage.getItem("jadwali");if(x)S=Object.assign(S,JSON.parse(x))}catch(e){}
+const save=()=>{try{localStorage.setItem("jadwali",JSON.stringify(S))}catch(e){}sync()};
+const L=(a,e)=>S.lang=="ar"?a:e;
+const dn=i=>DN[i][S.lang=="ar"?0:1];
+const E=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const mn=t=>{const[a,b]=t.split(":").map(Number);return a*60+b};
+const f12=t=>{let[h,m]=t.split(":").map(Number);const p=h>=12?L("م","PM"):L("ص","AM");h=h%12||12;return h+":"+String(m).padStart(2,"0")+" "+p};
+const id=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const nm=s=>s.trim().toLowerCase().replace(/\s+/g," ");
+let tt;function toast(s,bad){const t=document.getElementById("toast");t.textContent=s;t.className=bad?"bad":"";t.style.display="block";clearTimeout(tt);tt=setTimeout(()=>t.style.display="none",3500)}
+function op(h){document.getElementById("mb").innerHTML=h;document.getElementById("m").classList.add("on")}
+function cl(){document.getElementById("m").classList.remove("on")}
+const $=i=>document.getElementById(i);
+function applyLook(){const r=document.documentElement;r.style.setProperty("--a",S.color);r.dir=S.lang=="ar"?"rtl":"ltr";r.lang=S.lang;if(S.theme=="auto")r.removeAttribute("data-theme");else r.setAttribute("data-theme",S.theme)}
+function R(){applyLook();$("ttl").textContent=view=="tt"?L("جدولي","My timetable"):L("امتحاناتي","My exams");
+$("nv").innerHTML=`<button class="${view=="tt"?"on":""}" onclick="view='tt';R()">${L("الجدول","Timetable")}</button><button class="${view=="ex"?"on":""}" onclick="view='ex';R()">${L("امتحاناتي","Exams")}</button>`;
+$("v").innerHTML=view=="tt"?TT():EX()}
+function rows(){const m=new Map();S.slots.forEach(s=>m.set(s.join("|"),s));S.courses.forEach(c=>c.lec.forEach(l=>m.set(l.s+"|"+l.e,[l.s,l.e])));return[...m.values()].sort((a,b)=>mn(a[0])-mn(b[0])||mn(a[1])-mn(b[1]))}
+function TT(){const rs=rows();let h=`<div class="tw"><table><tr><th></th>${S.days.map(d=>`<th>${dn(d)}</th>`).join("")}</tr>`;
+rs.forEach(r=>{h+=`<tr><td class="t">${f12(r[0])}<br>${f12(r[1])}</td>`;S.days.forEach(d=>{let c="";S.courses.forEach(x=>x.lec.forEach(l=>{if(l.d==d&&l.s==r[0]&&l.e==r[1])c+=`<div class="c" onclick="cm('${x.id}')">${E(x.name)}${x.hall?`<small>${E(x.hall)}</small>`:""}</div>`}));h+=`<td>${c}</td>`});h+="</tr>"});
+return h+`</table></div><div class="row"><button class="btn" onclick="cf()">+ ${L("إضافة مادة","Add course")}</button></div>`+(S.courses.length?"":`<p class="mut">${L("الجدول فارغ. اضغط «إضافة مادة» للبدء.","Your timetable is empty. Tap “Add course” to start.")}</p>`)}
+function cm(i){const c=S.courses.find(x=>x.id==i);op(`<h2>${E(c.name)}</h2><p class="mut">${c.code?E(c.code)+" · ":""}${c.hall?E(c.hall):""}${c.mid?`<br>${L("الجزئي","Midterm")}: ${c.mid}`:""}${c.fin?`<br>${L("النهائي","Final")}: ${c.fin}`:""}</p><div class="row"><button class="btn" onclick="cf('${i}')">${L("تعديل","Edit")}</button><button class="btn d" onclick="del('${i}')">${L("حذف","Delete")}</button><button class="btn g" onclick="cl()">${L("إغلاق","Close")}</button></div>`)}
+function del(i){if(!confirm(L("حذف هذه المادة؟","Delete this course?")))return;S.courses=S.courses.filter(x=>x.id!=i);save();cl();R()}
+function slotOpts(sel){return S.slots.map(s=>`<option value="${s.join("|")}" ${sel==s.join("|")?"selected":""}>${f12(s[0])} - ${f12(s[1])}</option>`).join("")+`<option value="">${L("وقت مخصص","Custom")}</option>`}
+function lecRow(i,l){l=l||{d:S.days[0],s:S.slots[0]?.[0]||"08:30",e:S.slots[0]?.[1]||"10:00"};const all=[0,1,2,3,4,5,6];
+return`<div class="lec" data-l><b class="mut">${L("محاضرة","Lecture")} ${i+1}</b><label>${L("اليوم","Day")}</label><select class="ld">${all.map(d=>`<option value="${d}" ${l.d==d?"selected":""}>${dn(d)}</option>`).join("")}</select>
+<label>${L("الفترة","Slot")}</label><select onchange="if(this.value){const p=this.value.split('|'),r=this.closest('[data-l]');r.querySelector('.ls').value=p[0];r.querySelector('.le').value=p[1]}">${slotOpts(l.s+"|"+l.e)}</select>
+<div class="row"><div style="flex:1"><label>${L("من","From")}</label><input type="time" class="ls" value="${l.s}"></div><div style="flex:1"><label>${L("إلى","To")}</label><input type="time" class="le" value="${l.e}"></div></div></div>`}
+function setN(){const n=+$("cn").value,cur=[...document.querySelectorAll("[data-l]")].map(r=>({d:+r.querySelector(".ld").value,s:r.querySelector(".ls").value,e:r.querySelector(".le").value}));let h="";for(let i=0;i<n;i++)h+=lecRow(i,cur[i]);$("lecs").innerHTML=h}
+function cf(i){const c=i?S.courses.find(x=>x.id==i):{lec:[{}]};const n=c.lec.length||1;
+op(`<h2>${i?L("تعديل مادة","Edit course"):L("إضافة مادة","Add course")}</h2>
+<label>${L("اسم المادة","Course name")}</label><input id="cname" value="${E(c.name)}">
+<label>${L("رمز المادة (اختياري)","Course code (optional)")}</label><input id="ccode" value="${E(c.code)}">
+<label>${L("القاعة (اختياري)","Hall (optional)")}</label><input id="chall" value="${E(c.hall)}">
+<label>${L("كم محاضرة في الأسبوع؟","Lectures per week?")}</label><select id="cn" onchange="setN()">${[1,2,3,4,5,6].map(k=>`<option ${k==n?"selected":""}>${k}</option>`).join("")}</select>
+<div id="lecs">${c.lec.map((l,k)=>lecRow(k,l.d==null?null:l)).join("")}</div>
+<label>${L("تاريخ الامتحان الجزئي (اختياري)","Midterm date (optional)")}</label><input type="date" id="cmid" value="${c.mid||""}">
+<label>${L("تاريخ الامتحان النهائي (اختياري)","Final date (optional)")}</label><input type="date" id="cfin" value="${c.fin||""}">
+<div class="row"><button class="btn" onclick="cs('${i||""}')">${i?L("حفظ","Save"):L("إضافة","Add")}</button><button class="btn g" onclick="cl()">${L("إلغاء","Cancel")}</button></div>`)}
+function cs(i){const name=$("cname").value.trim(),code=$("ccode").value.trim();if(!name)return toast(L("اكتب اسم المادة","Enter a course name"),1);
+const lec=[...document.querySelectorAll("[data-l]")].map(r=>({d:+r.querySelector(".ld").value,s:r.querySelector(".ls").value,e:r.querySelector(".le").value}));
+for(const l of lec)if(!l.s||!l.e||mn(l.e)<=mn(l.s))return toast(L("وقت المحاضرة غير صحيح","Invalid lecture time"),1);
+const dup=S.courses.find(x=>x.id!=i&&(nm(x.name)==nm(name)||(code&&x.code&&nm(x.code)==nm(code))));if(dup)return toast(L("هذه المادة مضافة مسبقاً: ","Course already added: ")+dup.name,1);
+for(let a=0;a<lec.length;a++){for(let b=a+1;b<lec.length;b++)if(lec[a].d==lec[b].d&&mn(lec[a].s)<mn(lec[b].e)&&mn(lec[b].s)<mn(lec[a].e))return toast(L("تعارض بين محاضرتين لنفس المادة","Two lectures of this course overlap"),1);
+for(const x of S.courses){if(x.id==i)continue;for(const y of x.lec)if(y.d==lec[a].d&&mn(lec[a].s)<mn(y.e)&&mn(y.s)<mn(lec[a].e))return toast(L(`⚠️ تعارض مع «${x.name}» يوم ${dn(y.d)} (${f12(y.s)} - ${f12(y.e)})`,`⚠️ Conflict with “${x.name}” on ${dn(y.d)} (${f12(y.s)} - ${f12(y.e)})`),1)}}
+const o={id:i||id(),name,code,hall:$("chall").value.trim(),lec,mid:$("cmid").value,fin:$("cfin").value};
+if(i)S.courses=S.courses.map(x=>x.id==i?o:x);else S.courses.push(o);save();cl();R();toast(L("تم الحفظ","Saved"))}
+/* exams */
+function EX(){const ex=[...S.exams].sort((a,b)=>(a.date+a.s).localeCompare(b.date+b.s));let h=`<div class="row"><button class="btn" onclick="ef()">+ ${L("إضافة امتحان","Add exam")}</button><button class="btn g" onclick="toast(L('رفع صورة الجدول: قريباً','Image import: coming soon'))">📷 ${L("من صورة","From image")}</button></div>`;
+if(!ex.length)return h+`<p class="mut">${L("لا توجد امتحانات بعد. أضف امتحاناتك يدوياً بالتاريخ والوقت.","No exams yet. Add them manually with date and time.")}</p>`;
+let last="";ex.forEach(e=>{if(e.date!=last){last=e.date;const d=new Date(e.date+"T00:00");h+=`<h3 style="margin:16px 0 0">${d.toLocaleDateString(S.lang=="ar"?"ar-LY":"en-GB",{weekday:"long",day:"numeric",month:"long"})}</h3>`}
+h+=`<div class="card ex"><div><b>${E(e.name)}</b><div class="mut">${f12(e.s)} - ${f12(e.e)}${e.hall?" · "+E(e.hall):""}</div></div><div class="row"><button class="btn g" onclick="ef('${e.id}')">${L("تعديل","Edit")}</button><button class="btn d" onclick="ed('${e.id}')">${L("حذف","Delete")}</button></div></div>`});return h}
+function ed(i){if(!confirm(L("حذف هذا الامتحان؟","Delete this exam?")))return;S.exams=S.exams.filter(x=>x.id!=i);save();R()}
+function ef(i){const e=i?S.exams.find(x=>x.id==i):{};op(`<h2>${i?L("تعديل امتحان","Edit exam"):L("إضافة امتحان","Add exam")}</h2>
+<label>${L("المادة","Course")}</label><input id="en" list="cl" value="${E(e.name)}"><datalist id="cl">${S.courses.map(c=>`<option value="${E(c.name)}">`).join("")}</datalist>
+<label>${L("التاريخ","Date")}</label><input type="date" id="ed" value="${e.date||""}">
+<div class="row"><div style="flex:1"><label>${L("من","From")}</label><input type="time" id="es" value="${e.s||""}"></div><div style="flex:1"><label>${L("إلى","To")}</label><input type="time" id="ee" value="${e.e||""}"></div></div>
+<label>${L("القاعة (اختياري)","Hall (optional)")}</label><input id="eh" value="${E(e.hall)}">
+<div class="row"><button class="btn" onclick="es2('${i||""}')">${i?L("حفظ","Save"):L("إضافة","Add")}</button><button class="btn g" onclick="cl()">${L("إلغاء","Cancel")}</button></div>`)}
+function es2(i){const o={id:i||id(),name:$("en").value.trim(),date:$("ed").value,s:$("es").value,e:$("ee").value,hall:$("eh").value.trim()};
+if(!o.name||!o.date||!o.s||!o.e)return toast(L("أكمل الاسم والتاريخ والوقت","Fill in name, date and time"),1);if(mn(o.e)<=mn(o.s))return toast(L("وقت غير صحيح","Invalid time"),1);
+if(S.exams.some(x=>x.id!=i&&nm(x.name)==nm(o.name)))return toast(L("هذا الامتحان مضاف مسبقاً","This exam is already added"),1);
+const c=S.exams.find(x=>x.id!=i&&x.date==o.date&&mn(o.s)<mn(x.e)&&mn(x.s)<mn(o.e));if(c)return toast(L(`⚠️ تعارض مع امتحان «${c.name}» في نفس الوقت`,`⚠️ Conflicts with “${c.name}” exam at the same time`),1);
+if(i)S.exams=S.exams.map(x=>x.id==i?o:x);else S.exams.push(o);save();cl();R();toast(L("تم الحفظ","Saved"))}
+/* new table */
+function menu(){op(`<h2>${L("الإعدادات","Settings")}</h2>
+<label>${L("اللغة","Language")}</label><div class="row"><button class="btn ${S.lang=="ar"?"":"g"}" onclick="S.lang='ar';save();R();menu()">العربية</button><button class="btn ${S.lang=="en"?"":"g"}" onclick="S.lang='en';save();R();menu()">English</button></div>
+<label>${L("لون التطبيق","App color")}</label><div class="row">${COL.map(c=>`<div class="sw ${S.color==c?"on":""}" style="background:${c}" onclick="S.color='${c}';save();R();menu()"></div>`).join("")}</div>
+<label>${L("المظهر","Theme")}</label><div class="row">${[["auto","تلقائي","Auto"],["light","فاتح","Light"],["dark","داكن","Dark"]].map(t=>`<button class="btn ${S.theme==t[0]?"":"g"}" onclick="S.theme='${t[0]}';save();R();menu()">${L(t[1],t[2])}</button>`).join("")}</div>
+<label>${L("التنبيهات","Reminders")}</label><div class="row"><input type="checkbox" id="non" ${S.notif.on?"checked":""}> <span>${L("نبّهني قبل المحاضرة/الامتحان بـ","Remind me before lecture/exam by")}</span><input type="number" id="nmin" min="1" max="1440" value="${S.notif.min}" style="width:80px"> <span>${L("دقيقة","min")}</span></div>
+<p class="mut">${L("التنبيهات تصلك حتى والتطبيق مغلق.","Reminders arrive even when the app is closed.")}</p>
+<div class="row"><button class="btn" onclick="ns()">${L("حفظ التنبيهات","Save reminders")}</button></div><hr style="border-color:var(--ln)">
+<button class="btn" style="width:100%" onclick="nt()">${L("صنع جدول جديد","Create new timetable")}</button>
+<button class="btn g" style="width:100%;margin-top:8px" onclick="cl()">${L("إغلاق","Close")}</button>`)}
+async function ns(){S.notif.on=$("non").checked;S.notif.min=Math.max(1,+$("nmin").value||30);save();if(S.notif.on&&"Notification"in window&&Notification.permission=="default"){try{await Notification.requestPermission()}catch(e){}}cl();toast(L("تم حفظ التنبيهات","Reminders saved"))}
+function nt(){op(`<h2>${L("صنع جدول جديد","Create new timetable")}</h2><p class="mut">${L("سيتم مسح المواد الحالية.","Current courses will be cleared.")}</p>
+<label>${L("أيام الأسبوع","Days")}</label><div class="row">${[0,1,2,3,4,5,6].map(d=>`<label style="display:flex;gap:4px;margin:0"><input type="checkbox" class="dc" value="${d}" ${S.days.includes(d)?"checked":""}>${dn(d)}</label>`).join("")}</div>
+<label>${L("الفترات (بالساعات والدقائق)","Time slots")}</label><div id="sl">${S.slots.map(slRow).join("")}</div>
+<div class="row"><button class="btn g" onclick="$('sl').insertAdjacentHTML('beforeend',slRow(['09:00','10:00']))">+ ${L("فترة","Slot")}</button></div>
+<div class="row"><button class="btn" onclick="ntc()">${L("إنشاء الجدول","Create")}</button><button class="btn g" onclick="cl()">${L("إلغاء","Cancel")}</button></div>`)}
+function slRow(s){return`<div class="row" data-s><input type="time" value="${s[0]}"><span>→</span><input type="time" value="${s[1]}"><button class="btn d" onclick="this.parentNode.remove()">×</button></div>`}
+function ntc(){const days=[...document.querySelectorAll(".dc:checked")].map(x=>+x.value);const sl=[...document.querySelectorAll("[data-s]")].map(r=>[...r.querySelectorAll("input")].map(i=>i.value));
+if(!days.length||!sl.length)return toast(L("اختر يوماً وفترة على الأقل","Pick at least one day and slot"),1);if(sl.some(s=>!s[0]||!s[1]||mn(s[1])<=mn(s[0])))return toast(L("فترة غير صحيحة","Invalid slot"),1);
+S.days=days;S.slots=sl;S.courses=[];save();cl();view="tt";R();toast(L("تم إنشاء الجدول","Timetable created"))}
+/* reminders */
+const fired=new Set();function ntf(t,b){toast("🔔 "+t+" — "+b);try{if("Notification"in window&&Notification.permission=="granted")new Notification(t,{body:b})}catch(e){}try{navigator.vibrate&&navigator.vibrate(200)}catch(e){}}
+setInterval(()=>{if(!S.notif.on||window.Android)return;const n=new Date(),now=n.getHours()*60+n.getMinutes(),day=(n.getDay()+1)%7,ds=n.toISOString().slice(0,10),loc=new Date(n-n.getTimezoneOffset()*6e4).toISOString().slice(0,10),M=S.notif.min;
+S.courses.forEach(c=>c.lec.forEach(l=>{const k=loc+c.id+l.s;if(l.d==day&&mn(l.s)-now<=M&&mn(l.s)>now&&!fired.has(k)){fired.add(k);ntf(c.name,L(`محاضرتك بعد ${mn(l.s)-now} دقيقة`,`Lecture in ${mn(l.s)-now} min`))}}));
+S.exams.forEach(e=>{const k=e.id;if(e.date==loc&&mn(e.s)-now<=M&&mn(e.s)>now&&!fired.has(k)){fired.add(k);ntf(e.name,L(`امتحانك بعد ${mn(e.s)-now} دقيقة`,`Exam in ${mn(e.s)-now} min`))}})},20000);
+function sync(){try{if(!window.Android)return;const ev=[],now=Date.now(),M=S.notif.min;if(S.notif.on){const n=new Date();for(let k=0;k<21;k++){const d=new Date(n.getFullYear(),n.getMonth(),n.getDate()+k),di=(d.getDay()+1)%7;S.courses.forEach(c=>c.lec.forEach(l=>{if(l.d==di){const[h,m]=l.s.split(":").map(Number),t=new Date(d.getFullYear(),d.getMonth(),d.getDate(),h,m).getTime()-M*6e4;if(t>now)ev.push({t,title:c.name,body:L("محاضرتك بعد "+M+" دقيقة","Lecture in "+M+" min")+(c.hall?" · "+c.hall:"")})}}))}S.exams.forEach(e=>{const[y,mo,da]=e.date.split("-").map(Number),[h,m]=e.s.split(":").map(Number),t=new Date(y,mo-1,da,h,m).getTime()-M*6e4;if(t>now)ev.push({t,title:e.name,body:L("امتحانك بعد "+M+" دقيقة","Exam in "+M+" min")+(e.hall?" · "+e.hall:"")})})}ev.sort((a,b)=>a.t-b.t);Android.schedule(JSON.stringify(ev.slice(0,150)))}catch(e){}}
+R();sync();
+</script>
+</body>
+</html>
