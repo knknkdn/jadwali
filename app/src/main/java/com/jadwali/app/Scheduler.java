@@ -50,4 +50,12 @@ public class Scheduler {
             e.printStackTrace();
         }
     }
+
+    static void test(Context c, String t, String b) {
+        AlarmManager am = c.getSystemService(AlarmManager.class);
+        long at = System.currentTimeMillis() + 5000;
+        PendingIntent p = pi(c, 9999, t, b);
+        if (Build.VERSION.SDK_INT < 31 || am.canScheduleExactAlarms()) am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, p);
+        else am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, p);
+    }
 }

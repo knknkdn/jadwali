@@ -53,6 +53,11 @@ public class MainActivity extends Activity {
             }
 
             @JavascriptInterface
+            public void testNotif(String t, String b) {
+                Scheduler.test(MainActivity.this, t, b);
+            }
+
+            @JavascriptInterface
             public void pickImage() {
                 runOnUiThread(() -> {
                     Intent i = new Intent(Intent.ACTION_GET_CONTENT);
